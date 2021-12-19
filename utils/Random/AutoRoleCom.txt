@@ -1,0 +1,93 @@
+import discord
+from discord.ext import commands
+from discord.ext.commands.cooldowns import BucketType
+
+import pymongo
+
+
+mongoClient = pymongo.MongoClient('mongodb+srv://Java:Merlin890@sirius.dmiob.mongodb.net/myFirstDatabase?retryWrites=true&w=majority')
+db1 = mongoClient.get_database("Springs").get_collection("servers")
+db2 = mongoClient.get_database("Springs").get_collection("autorolecom")
+db3 = mongoClient.get_database("Springs").get_collection("welcoming")
+db4 = mongoClient.get_database("Springs").get_collection("internal")
+db9 = mongoClient.get_database("Springs").get_collection("autorolereactions")
+blacklisted = db4['blacklisted']
+
+def blacklist_check():
+    def predicate(ctx):
+        author_id = ctx.author.id
+        if blacklisted.find_one({'user_id': author_id}):
+            return False
+        return True
+
+    return commands.check(predicate)
+
+class AutoRoleCom(commands.Cog):
+    def __init__(self, client):
+        self.client = client
+
+
+
+    @commands.command()
+    @commands.has_permissions(manage_channels=True)
+    @commands.cooldown(3, 14, BucketType.user)
+    @blacklist_check()
+    async def colorsetup(self, ctx):
+#-----------------------------------------------------------------------------------------------------
+        await ctx.guild.create_role(name="lean purple", color=0x600080)
+        await ctx.guild.create_role(name="electric purple", color=0xbf00ff)
+#-----------------------------------------------------------------------------------------------------
+        lean_purple_role = next((g for g in ctx.guild.roles if g.name.lower() == "lean purple"), None)
+        electric_purple_role = next((g for g in ctx.guild.roles if g.name.lower() == "electric purple"), None)
+#-----------------------------------------------------------------------------------------------------
+        params = {
+            "guild_id": ctx.guild.id,
+            "lean_purple_role": lean_purple_role.id,
+            "electric_purple_role": electric_purple_role.id,
+        }
+        db2.insert_one(params)
+#-----------------------------------------------------------------------------------------------------
+        leanrolemention = db2.find_one({"guild_id": ctx.guild.id})['lean_purple_role']
+        electricrolemention = db2.find_one({"guild_id": ctx.guild.id})['electric_purple_role']
+#-----------------------------------------------------------------------------------------------------
+        leanrole = ctx.guild.get_role(leanrolemention)
+        electricrole = ctx.guild.get_role(electricrolemention)
+#-----------------------------------------------------------------------------------------------------
+        embed2 = discord.Embed(title='Purple', description=f'<:bladepurple1:905554307384999937> ;; {leanrole.mention}\n<:bladepurple2:905554206990168165> ;; {electricrole.mention}', color=0x2f3136)
+        embed2.set_image(url="https://i.pinimg.com/originals/34/db/06/34db06d537bdeecb1925badd9e3941f1.gif")
+#-----------------------------------------------------------------------------------------------------
+        msg1 = await ctx.send(embed=embed2)
+        await msg1.add_reaction('<:bladepurple1:905554307384999937>')
+        await msg1.add_reaction('<:bladepurple2:905554206990168165>')
+        params1 = {
+            "guild_id": ctx.guild.id,
+            'message_id': ctx.message.id,
+            'lean_emoji_id': 905567009679486986,
+            'electric_emoji_id': 905567043544301668,
+            'roles': [
+                lean_purple_role.id,
+                electric_purple_role.id
+            ]
+        }
+        db9.insert_one(params1)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        if payload.user_id == self.client.user.id:
+            return
+        lol1 = db9.find_one({"guild_id": payload.member.guild.id})
+        lol2 = db9.find_one({"guild_id": payload.member.guild.id})['message_id']
+        lol3 = db9.find_one({"guild_id": payload.member.guild.id})['lean_emoji_id']
+        lol4 = db2.find_one({"guild_id": payload.member.guild.id})['lean_purple_role']
+        message = str(payload.message_id)
+        guild = self.client.get_guild(payload.member.guild.id)
+        if lol2 in lol1:
+            print('d')
+            if payload.emoji.id == lol3:
+                print('d')
+                role = guild.get_role(lol4)
+                await payload.member.add_roles(role)
+                
+
+def setup(bot):
+    bot.add_cog(AutoRoleCom(bot))

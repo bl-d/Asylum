@@ -1,0 +1,21 @@
+import discord
+from discord.ext import commands
+
+from utils.paginator import *
+from utils.database import DataBase
+
+class Help(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command(help='Sends the help command')
+    @commands.cooldown(3, 5, commands.BucketType.user)
+    @DataBase.blacklist_check()
+    async def help(self, ctx):
+        embeds = [discord.Embed(title="asylum help", description='Welcome to Asylums help page, here you will find the commands\nTo naviagate through the help page use the <:AsylumBackPage:902651756377440278> and <:AsylumNextPage:902644474528813096> buttons\nFor support join [**here**](https://discord.gg/GzGZE7KSE6) and to invite me click [**here**](https://discord.com/api/oauth2/authorize?client_id=872975229578801152&permissions=8&scope=bot%20applications.commands)',color=0x747f8d),
+          discord.Embed(title="Second embed", color=0x747f8d),
+          discord.Embed(title="Third embed", color=0x747f8d)]
+        await Simple().start(ctx, pages=embeds)
+
+def setup(bot):
+    bot.add_cog(Help(bot))
